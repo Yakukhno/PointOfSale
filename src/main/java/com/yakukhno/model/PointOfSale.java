@@ -19,6 +19,28 @@ public class PointOfSale {
         return isAllowed;
     }
 
+    public Sale getProduct(ProductType type) {
+        Sale sale;
+        if (getClientCoins() < type.getPrice()) {
+            sale = new Sale();
+            sale.setStatus(Status.NOT_ENOUGH_MONEY);
+        } else {
+            sale = new Sale.Builder()
+                    .setProduct(new Product(type))
+                    .setChange(getClientCoins() - type.getPrice())
+                    .setStatus(Status.OK)
+                    .build();
+        }
+        return sale;
+    }
+
+    public Sale refund() {
+        return new Sale.Builder()
+                .setChange(getClientCoins())
+                .setStatus(Status.OK)
+                .build();
+    }
+
     public int getClientCoins() {
         return clientCoins.stream()
                 .reduce((a, b) -> (a + b))

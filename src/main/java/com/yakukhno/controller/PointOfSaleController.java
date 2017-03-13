@@ -1,9 +1,14 @@
 package com.yakukhno.controller;
 
 import com.yakukhno.model.PointOfSale;
+import com.yakukhno.model.ProductType;
+import com.yakukhno.model.Sale;
+import com.yakukhno.model.Status;
 import com.yakukhno.view.ConsoleView;
 import com.yakukhno.view.View;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Scanner;
 
 public class PointOfSaleController implements Controller {
@@ -11,22 +16,37 @@ public class PointOfSaleController implements Controller {
     private View view;
 
     private Scanner scanner;
+    private Map<Integer, ProductType> codeToProductType;
 
     public PointOfSaleController(PointOfSale pointOfSale, View view) {
         this.pointOfSale = pointOfSale;
         this.view = view;
+        initCodeToProductType();
     }
 
     public void execute() {
         handleCoinsInsertion();
-        System.out.println(pointOfSale.getClientCoins());
     }
 
     private void handleCoinsInsertion() {
+        int code;
         do {
             handleCoinInsertion();
             view.showMessage(ConsoleView.MENU_MESSAGE);
-        } while (readUserInput(2) == 1);
+            code = readUserInput(2);
+        } while (code == 1);
+        if (code == 0) {
+            handleSale(pointOfSale.refund());
+        } else if (code == 2) {
+            handleProductSelection();
+        }
+    }
+
+    private void handleProductSelection() {
+        view.showMessage(ConsoleView.SELECT_PRODUCT_MESSAGE);
+        int code = readUserInput(3);
+        Sale sale = pointOfSale.getProduct(codeToProductType.get(code));
+        handleSale(sale);
     }
 
     private void handleCoinInsertion() {
@@ -38,6 +58,20 @@ public class PointOfSaleController implements Controller {
         }
     }
 
+    private void handleSale(Sale sale) {
+        if (sale.getProduct() != null) {
+            view.showMessage(ConsoleView.PRODUCT_MESSAGE,
+                    sale.getProduct().getType().name());
+        }
+        if (sale.getChange() != 0) {
+            view.showMessage(ConsoleView.RECEIVE_MONEY_MESSAGE,
+                    sale.getChange());
+        }
+        view.showMessage(ConsoleView.STATUS_MESSAGE, sale.getStatus().name());
+        if (sale.getStatus().equals(Status.NOT_ENOUGH_MONEY)) {
+            handleCoinsInsertion();
+        }
+    }
 
     private int readUserInput(int numberOfOptions) {
         int userInput;
@@ -51,6 +85,14 @@ public class PointOfSaleController implements Controller {
             userInput = readUserInput(numberOfOptions);
         }
         return userInput;
+    }
+
+    private void initCodeToProductType() {
+        codeToProductType = new HashMap<>();
+        int i = 1;
+        for (ProductType type : ProductType.values()) {
+            codeToProductType.put(i++, type);
+        }
     }
 
     public Scanner getScanner() {
