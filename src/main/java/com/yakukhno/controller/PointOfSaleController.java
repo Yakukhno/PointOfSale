@@ -1,67 +1,89 @@
 package com.yakukhno.controller;
 
 import com.yakukhno.model.PointOfSale;
-import com.yakukhno.model.ProductType;
+import com.yakukhno.model.Product;
 import com.yakukhno.model.Sale;
 import com.yakukhno.model.Status;
 import com.yakukhno.view.ConsoleView;
 import com.yakukhno.view.View;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 import java.util.Scanner;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 public class PointOfSaleController implements Controller {
     private PointOfSale pointOfSale;
     private View view;
 
     private Scanner scanner;
-    private Map<Integer, ProductType> codeToProductType;
 
     public PointOfSaleController(PointOfSale pointOfSale, View view) {
         this.pointOfSale = pointOfSale;
         this.view = view;
-        initCodeToProductType();
     }
 
     public void execute() {
-        handleCoinsInsertion();
+        handleMenuSelection();
     }
 
-    private void handleCoinsInsertion() {
-        int code;
-        do {
-            handleCoinInsertion();
-            view.showMessage(ConsoleView.MENU_MESSAGE);
-            code = readUserInput(2);
-        } while (code == 1);
-        if (code == 0) {
-            handleSale(pointOfSale.refund());
-        } else if (code == 2) {
-            handleProductSelection();
+    private void handleMenuSelection() {
+        view.showMessage(ConsoleView.MENU_MESSAGE);
+        int code = readUserInput(2);
+        switch (code) {
+            case 1:
+                handleCoinInsertion();
+                break;
+            case 2:
+                handleProductSelection();
+                break;
+            case 0:
+                handleSale(pointOfSale.refund());
+                break;
+            default:
+                throw new IllegalArgumentException();
         }
-    }
-
-    private void handleProductSelection() {
-        view.showMessage(ConsoleView.SELECT_PRODUCT_MESSAGE);
-        int code = readUserInput(3);
-        Sale sale = pointOfSale.getProduct(codeToProductType.get(code));
-        handleSale(sale);
     }
 
     private void handleCoinInsertion() {
-        view.showMessage(ConsoleView.INSERT_COIN_MESSAGE);
-        boolean idAdded = pointOfSale.addCoin(readUserInput(50));
-        if (!idAdded) {
-            view.showMessage(ConsoleView.INVALID_COIN_MESSAGE);
-            handleCoinInsertion();
+        view.showMessage(ConsoleView.INSERT_COIN_MESSAGE, getAllowedCoinsString());
+        Sale sale = pointOfSale.addCoin(readUserInput());
+        handleSale(sale);
+        handleMenuSelection();
+    }
+
+    private void handleProductSelection() {
+        view.showMessage(ConsoleView.SELECT_PRODUCT_MESSAGE, getProductsString());
+        int code = readUserInput(pointOfSale.getProductContainer().size() - 1);
+        Sale sale = pointOfSale.getProduct(code);
+        handleSale(sale);
+    }
+
+    private String getProductsString() {
+        List<Product> products = pointOfSale.getProductContainer();
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < products.size(); i++) {
+            builder.append(i)
+                    .append("-")
+                    .append(products.get(i).getName())
+                    .append(" ");
         }
+        return builder.toString();
+    }
+
+    private String getAllowedCoinsString() {
+        SortedSet<Integer> allowedCoins = new TreeSet<>(pointOfSale.getAllowedCoins());
+        StringBuilder builder = new StringBuilder();
+        for (int coin : allowedCoins) {
+            builder.append(coin).append(" ");
+        }
+        return builder.toString();
     }
 
     private void handleSale(Sale sale) {
         if (sale.getProduct() != null) {
             view.showMessage(ConsoleView.PRODUCT_MESSAGE,
-                    sale.getProduct().getType().name());
+                    sale.getProduct().getName());
         }
         if (sale.getChange() != 0) {
             view.showMessage(ConsoleView.RECEIVE_MONEY_MESSAGE,
@@ -69,34 +91,33 @@ public class PointOfSaleController implements Controller {
         }
         view.showMessage(ConsoleView.STATUS_MESSAGE, sale.getStatus().name());
         if (sale.getStatus().equals(Status.NOT_ENOUGH_MONEY)) {
-            handleCoinsInsertion();
+            handleMenuSelection();
         }
     }
 
-    private int readUserInput(int numberOfOptions) {
+    private int readUserInput(int max) {
         int userInput;
         try {
             userInput = Integer.parseInt(scanner.next());
-            if (userInput > numberOfOptions || userInput < 0) {
+            if ((userInput < 0) || (userInput > max)) {
                 throw new NumberFormatException();
             }
         } catch (NumberFormatException e) {
             view.showMessage(ConsoleView.ERROR_INPUT_MESSAGE);
-            userInput = readUserInput(numberOfOptions);
+            userInput = readUserInput(max);
         }
         return userInput;
     }
 
-    private void initCodeToProductType() {
-        codeToProductType = new HashMap<>();
-        int i = 1;
-        for (ProductType type : ProductType.values()) {
-            codeToProductType.put(i++, type);
+    private int readUserInput() {
+        int userInput;
+        try {
+            userInput = Integer.parseInt(scanner.next());
+        } catch (NumberFormatException e) {
+            view.showMessage(ConsoleView.ERROR_INPUT_MESSAGE);
+            userInput = readUserInput();
         }
-    }
-
-    public Scanner getScanner() {
-        return scanner;
+        return userInput;
     }
 
     public void setScanner(Scanner scanner) {

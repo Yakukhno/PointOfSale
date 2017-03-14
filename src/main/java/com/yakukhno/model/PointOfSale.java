@@ -3,6 +3,7 @@ package com.yakukhno.model;
 import java.util.*;
 
 public class PointOfSale {
+    private List<Product> productContainer = new ArrayList<>();
     private Set<Integer> allowedCoins = new HashSet<>();
     private List<Integer> clientCoins = new ArrayList<>();
 
@@ -10,26 +11,26 @@ public class PointOfSale {
         initAllowedCoins();
     }
 
-    public boolean addCoin(int coin) {
-        boolean isAllowed = false;
+    public Sale addCoin(int coin) {
+        Sale sale = new Sale();
+        sale.setStatus(Status.NOT_ALLOWED_COIN);
         if (allowedCoins.contains(coin)) {
             clientCoins.add(coin);
-            isAllowed = true;
+            sale.setStatus(Status.OK);
         }
-        return isAllowed;
+        return sale;
     }
 
-    public Sale getProduct(ProductType type) {
-        Sale sale;
-        if (getClientCoins() < type.getPrice()) {
-            sale = new Sale();
+    public Sale getProduct(int productNumber) {
+        Product product = productContainer.get(productNumber);
+        int diff = getClientCoins() - product.getPrice();
+        Sale sale = new Sale();
+        if (diff < 0) {
             sale.setStatus(Status.NOT_ENOUGH_MONEY);
         } else {
-            sale = new Sale.Builder()
-                    .setProduct(new Product(type))
-                    .setChange(getClientCoins() - type.getPrice())
-                    .setStatus(Status.OK)
-                    .build();
+            sale.setProduct(product);
+            sale.setChange(diff);
+            sale.setStatus(Status.OK);
         }
         return sale;
     }
@@ -39,6 +40,18 @@ public class PointOfSale {
                 .setChange(getClientCoins())
                 .setStatus(Status.OK)
                 .build();
+    }
+
+    public void addProductToContainer(Product product) {
+        productContainer.add(product);
+    }
+
+    public List<Product> getProductContainer() {
+        return productContainer;
+    }
+
+    public Set<Integer> getAllowedCoins() {
+        return allowedCoins;
     }
 
     public int getClientCoins() {
