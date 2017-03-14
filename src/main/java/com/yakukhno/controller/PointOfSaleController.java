@@ -47,9 +47,18 @@ public class PointOfSaleController implements Controller {
 
     private void handleCoinInsertion() {
         view.showMessage(ConsoleView.INSERT_COIN_MESSAGE, getAllowedCoinsString());
-        Sale sale = pointOfSale.addCoin(readUserInput());
+        Sale sale = pointOfSale.insertCoin(readUserInput());
         handleSale(sale);
         handleMenuSelection();
+    }
+
+    private String getAllowedCoinsString() {
+        SortedSet<Integer> allowedCoins = new TreeSet<>(pointOfSale.getAllowedCoins());
+        StringBuilder builder = new StringBuilder();
+        for (int coin : allowedCoins) {
+            builder.append(coin).append(" ");
+        }
+        return builder.toString();
     }
 
     private void handleProductSelection() {
@@ -67,15 +76,6 @@ public class PointOfSaleController implements Controller {
                     .append("-")
                     .append(products.get(i).getName())
                     .append(" ");
-        }
-        return builder.toString();
-    }
-
-    private String getAllowedCoinsString() {
-        SortedSet<Integer> allowedCoins = new TreeSet<>(pointOfSale.getAllowedCoins());
-        StringBuilder builder = new StringBuilder();
-        for (int coin : allowedCoins) {
-            builder.append(coin).append(" ");
         }
         return builder.toString();
     }

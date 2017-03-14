@@ -11,7 +11,7 @@ public class PointOfSale {
         initAllowedCoins();
     }
 
-    public Sale addCoin(int coin) {
+    public Sale insertCoin(int coin) {
         Sale sale = new Sale();
         sale.setStatus(Status.NOT_ALLOWED_COIN);
         if (allowedCoins.contains(coin)) {
@@ -23,7 +23,7 @@ public class PointOfSale {
 
     public Sale getProduct(int productNumber) {
         Product product = productContainer.get(productNumber);
-        int diff = getClientCoins() - product.getPrice();
+        int diff = getClientMoney() - product.getPrice();
         Sale sale = new Sale();
         if (diff < 0) {
             sale.setStatus(Status.NOT_ENOUGH_MONEY);
@@ -37,7 +37,7 @@ public class PointOfSale {
 
     public Sale refund() {
         return new Sale.Builder()
-                .setChange(getClientCoins())
+                .setChange(getClientMoney())
                 .setStatus(Status.OK)
                 .build();
     }
@@ -54,7 +54,7 @@ public class PointOfSale {
         return allowedCoins;
     }
 
-    public int getClientCoins() {
+    public int getClientMoney() {
         return clientCoins.stream()
                 .reduce((a, b) -> (a + b))
                 .orElse(0);
